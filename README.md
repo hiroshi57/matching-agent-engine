@@ -12,18 +12,20 @@
 
 ## ステータス
 
-🟢 **差別化コア実装済み**（実在IDバリデータ＋アダプタ交換＋広告フィードバック） / 拡張は承認後
+🟢 **全機能拡張中**（実在IDバリデータ / アダプタ交換 / 広告FB / ハイブリッド検索 / イベントログ）
 
 - [docs/adapter_interface.md](docs/adapter_interface.md) — コア/アダプタ境界のインターフェース定義
-- `core/` — 対話スロット抽出 + マッチング(実在IDのみ) + 属性ベース理由生成
-- `adapters/` — 不動産・求人(コード変更なしで切替) / `marketing_feedback/` — 広告示唆（tests 8件PASS）
+- `core/matching.py` — 構造化フィルタ＋自由文ベクトルの**ハイブリッド検索**(`match_hybrid`, 実在IDのみ)
+- `core/vector.py` — 自由文ニーズのローカル埋め込み(pgvector代替)
+- `core/events.py` — 発話/スロット/提示/クリック/離脱のイベントログ
+- `adapters/`(不動産・求人) / `marketing_feedback/`（tests 13件PASS）
 
 ```bash
 python demo.py          # 対話->マッチング(実在IDのみ)->理由->アダプタ切替->広告示唆
-python -m pytest -q
+python -m pytest -q     # テスト13件
 ```
 
-進め方（プロンプト指定）: IF定義 → **承認** → コア実装→不動産アダプタ→求人アダプタ→フィードバックモジュール。
+進め方（プロンプト指定）: コア→不動産アダプタ→求人アダプタ→フィードバックモジュール。
 
 ## 予定フォルダ構成（実装時）
 

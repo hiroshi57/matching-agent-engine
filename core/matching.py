@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 from .models import Item
+from .vector import embed, cosine
 
 
 @dataclass
@@ -16,6 +17,13 @@ class Match:
     item: Item
     matched_slots: List[str]
     score: float
+    vector_sim: float = 0.0
+
+
+def _item_text(item: Item) -> str:
+    # 構造化属性 + 自由文(features)からアイテムのテキスト表現を作る
+    parts = [str(v) for v in item.attributes.values()]
+    return " ".join(parts)
 
 
 class ItemStore:
@@ -55,6 +63,25 @@ class MatchingEngine:
             matched = [s for s, v in slots.items() if self._satisfies(item, s, v)]
             if matched:
                 results.append(Match(item, matched, len(matched) / max(1, len(slots))))
+        results.sort(key=lambda m: m.score, reverse=True)
+        return results[:top_k]
+
+    def match_hybrid(self, slots: Dict, free_text: str = "", top_k: int = 5,
+                     w_struct: float = 0.6, w_vec: float = 0.4) -> List[Match]:
+        """ハイブリッド検索: 構造化フィルタ(スロット) + 自由文ベクトル類似.
+
+        候補は実在アイテムのみ。構造化被覆率とベクトル類似の重み付き合成でランク付け。
+        """
+        q_vec = embed(free_text) if free_text else {}
+        results: List[Match] = []
+        for item in self.store.items:
+            matched = [s for s, v in slots.items() if self._satisfies(item, s, v)]
+            struct = len(matched) / max(1, len(slots)) if slots else 0.0
+            vsim = cosine(q_vec, embed(_item_text(item))) if q_vec else 0.0
+            if not matched and vsim == 0.0:
+                continue
+            score = w_struct * struct + w_vec * vsim
+            results.append(Match(item, matched, score, vector_sim=vsim))
         results.sort(key=lambda m: m.score, reverse=True)
         return results[:top_k]
 

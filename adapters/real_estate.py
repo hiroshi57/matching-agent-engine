@@ -12,11 +12,11 @@ SLOTS = [
 ]
 
 ITEMS = [
-    Item("re-001", {"area": "新宿", "layout": "1K", "rent": 95000}),
-    Item("re-002", {"area": "新宿", "layout": "1LDK", "rent": 140000}),
-    Item("re-003", {"area": "渋谷", "layout": "1K", "rent": 105000}),
-    Item("re-004", {"area": "池袋", "layout": "2LDK", "rent": 180000}),
-    Item("re-005", {"area": "新宿", "layout": "1K", "rent": 88000}),
+    Item("re-001", {"area": "新宿", "layout": "1K", "rent": 95000, "features": "駅近 オートロック 築浅"}),
+    Item("re-002", {"area": "新宿", "layout": "1LDK", "rent": 140000, "features": "南向き 静か ペット可"}),
+    Item("re-003", {"area": "渋谷", "layout": "1K", "rent": 105000, "features": "駅近 コンビニ近い"}),
+    Item("re-004", {"area": "池袋", "layout": "2LDK", "rent": 180000, "features": "広い 静か 公園近い"}),
+    Item("re-005", {"area": "新宿", "layout": "1K", "rent": 88000, "features": "格安 バス トイレ別"}),
 ]
 
 
