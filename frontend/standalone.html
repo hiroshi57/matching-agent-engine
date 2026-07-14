@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>マッチングエンジン(スタンドアロン)</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body{font-family:system-ui,sans-serif;background:#f7f8fa;margin:0;padding:24px;color:#1a1a2e}
+    .wrap{max-width:720px;margin:0 auto} h1{color:#e07b39;font-size:22px}
+    .card{background:#fff;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+    table{border-collapse:collapse;width:100%} th,td{border:1px solid #dde;padding:6px 8px} th{background:#fdf1e7}
+    nav button{margin-right:8px} button.primary{background:#e07b39;color:#fff;border:0;padding:8px 14px;border-radius:8px;cursor:pointer}
+    label{display:inline-block;margin:6px 8px}
+  </style>
+</head>
+<body><div id="root"></div>
+<script type="text/babel" data-presets="react">
+  const RESULTS=[{id:"re-001",score:0.79,reasons:["エリア=新宿","間取り=1K"]},
+    {id:"re-005",score:0.66,reasons:["エリア=新宿"]}];
+  const FREQ={area:["新宿","渋谷"],layout:["1K","3LDK"]}; const ZERO=[{area:"新宿",layout:"3LDK"}];
+  function App(){
+    const [tab,setTab]=React.useState("chat"); const [res,setRes]=React.useState(null);
+    return (<div className="wrap"><h1>業種特化マッチングエンジン <small style={{fontSize:12,color:"#889"}}>(デモ)</small></h1>
+      <nav><button onClick={()=>setTab("chat")} disabled={tab==="chat"}>対話ウィジェット</button>
+        <button onClick={()=>setTab("fb")} disabled={tab==="fb"}>広告フィードバック</button></nav>
+      {tab==="chat"?(<div className="card"><h2>対話マッチング(不動産)</h2>
+        <label>エリア <select><option>新宿</option><option>渋谷</option></select></label>
+        <label>間取り <select><option>1K</option><option>1LDK</option></select></label>
+        <label>こだわり <input defaultValue="駅近"/></label>
+        <button className="primary" onClick={()=>setRes(RESULTS)}>候補を探す</button>
+        <h3>候補(実在物件のみ)</h3>
+        <ul>{(res||[]).map(r=>(<li key={r.id}><b>{r.id}</b> (score {r.score}) — {r.reasons.join(" / ")}</li>))}</ul>
+      </div>):(<div className="card"><h2>広告フィードバック</h2>
+        <h3>頻出ニーズ(KW候補)</h3><table><tr><th>スロット</th><th>頻出値</th></tr>
+          {Object.entries(FREQ).map(([k,v])=>(<tr key={k}><td>{k}</td><td>{v.join("、")}</td></tr>))}</table>
+        <h3>候補ゼロ条件</h3><ul>{ZERO.map((z,i)=>(<li key={i}>{Object.entries(z).map(([k,v])=>k+"="+v).join("、")}</li>))}</ul>
+      </div>)}</div>);
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script></body></html>
