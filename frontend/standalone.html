@@ -2,53 +2,195 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>マッチングエンジン</title>
+  <title>業種特化マッチングエンジン（実スコアリング）</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
   <style>
     body{font-family:system-ui,sans-serif;background:#f7f8fa;margin:0;padding:24px;color:#1a1a2e}
-    .wrap{max-width:720px;margin:0 auto} h1{color:#e07b39;font-size:22px}
+    .wrap{max-width:900px;margin:0 auto} h1{color:#e07b39;font-size:22px}
+    h2{font-size:16px;margin:2px 0 8px} h3{font-size:14px;margin:10px 0 4px} .sub{color:#8a8f9c;font-size:12px}
     .card{background:#fff;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-    table{border-collapse:collapse;width:100%} th,td{border:1px solid #dde;padding:6px 8px} th{background:#fdf1e7}
-    nav button{margin-right:8px} button.primary{background:#e07b39;color:#fff;border:0;padding:8px 14px;border-radius:8px;cursor:pointer}
-    label{display:inline-block;margin:6px 8px}
-  
-    /* --- レスポンシブ強化(スマホ最適化) --- */
-    *{box-sizing:border-box} img,pre,table{max-width:100%}
-    .metrics{flex-wrap:wrap}
-    @media (max-width:640px){
-      body{padding:14px} .wrap{max-width:100%}
-      h1{font-size:19px} nav button{margin-bottom:6px}
-      .metrics{flex-direction:column;gap:8px} .metric{width:100%}
-      table{display:block;overflow-x:auto;white-space:nowrap;font-size:13px}
-      pre{overflow-x:auto} input,textarea,select{max-width:100%;width:100%}
-    }
-</style>
+    .real{background:#fdf1e7;border:1px solid #f3d5b8;border-radius:10px;padding:8px 12px;font-size:13px;color:#b85a17;margin-bottom:8px}
+    .form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+    .form label{display:block;font-size:12px;color:#556;margin-bottom:3px}
+    .form select,.form input{width:100%;border:1px solid #e0d5c8;border-radius:7px;padding:7px;font-size:14px}
+    button{border:0;border-radius:8px;cursor:pointer;font-size:14px;padding:9px 16px}
+    button.primary{background:#e07b39;color:#fff;margin-top:10px} button.ghost{background:#f3ece6;color:#b85a17;margin-left:6px;font-size:13px;padding:7px 12px}
+    table{border-collapse:collapse;width:100%;font-size:12.5px} th,td{border:1px solid #ece4dc;padding:6px;text-align:center} th{background:#fdf1e7}
+    td.l,th.l{text-align:left} tr.clk{cursor:pointer} tr.clk:hover{background:#fffaf5} tr.sel{background:#fdf1e7}
+    .lvl{display:inline-block;padding:3px 12px;border-radius:20px;font-weight:bold;font-size:13px;color:#fff}
+    .big{font-size:40px;font-weight:bold;color:#e07b39}
+    .reason{font-size:12px;color:#0f7a54} .miss{font-size:12px;color:#c0392b}
+    .ai{background:linear-gradient(135deg,#fdf1e7,#eafaf3);border-left:4px solid #e07b39;border-radius:10px;padding:14px;font-size:14px;line-height:1.7}
+    .plan{background:#fffaf5;border:1px solid #f3e2d2;border-radius:10px;padding:12px;margin-top:8px}
+    .plan li{margin:7px 0;line-height:1.6;font-size:13px} .tierlabel{font-weight:bold;color:#b85a17;margin-top:4px}
+    .zero{background:#fdeeee;border:1px solid #f0caca;border-radius:10px;padding:12px;font-size:13px;color:#c0392b}
+    .barrow{display:flex;align-items:center;gap:10px;margin:5px 0;font-size:13px}
+    .barrow .name{width:110px;flex-shrink:0} .track{flex:1;background:#f1ece7;border-radius:6px;height:14px;overflow:hidden} .fill{height:14px;border-radius:6px}
+    .note{color:#8a8f9c;font-size:12px}
+    @media(max-width:640px){body{padding:14px} .wrap{max-width:100%} h1{font-size:19px}
+      table{display:block;overflow-x:auto;white-space:nowrap;font-size:12px} .barrow .name{width:80px}}
+  </style>
 </head>
-<body><div style="max-width:880px;margin:0 auto 4px;background:#fff8e1;border:1px solid #f0d98a;border-radius:10px;padding:8px 14px;font:13px system-ui;color:#7a5b00">🔬 <b>デモ版</b>：数値は<b>サンプル（実測・実データではありません）</b>。ロジックの見せ方を確認するためのプロトタイプです。</div>
+<body><div style="max-width:880px;margin:0 auto 4px;background:#fff8e1;border:1px solid #f0d98a;border-radius:10px;padding:8px 14px;font:13px system-ui;color:#7a5b00">🔬 <b>実スコアリング版</b>：希望条件を入力すると、<b>在庫データに対して実際に条件照合・重み付けスコア計算</b>を行い、適合理由と不足点を提示します。在庫はサンプルデータ（実運用では自社DBを接続）。</div>
 <div id="root"></div>
 <script type="text/plain" id="__jsx">
-  const RESULTS=[{id:"re-001",score:0.79,reasons:["エリア=新宿","間取り=1K"]},
-    {id:"re-005",score:0.66,reasons:["エリア=新宿"]}];
-  const FREQ={area:["新宿","渋谷"],layout:["1K","3LDK"]}; const ZERO=[{area:"新宿",layout:"3LDK"}];
-  function App(){
-    const [tab,setTab]=React.useState("chat"); const [res,setRes]=React.useState(null);
-    return (<div className="wrap"><h1>業種特化マッチングエンジン <small style={{fontSize:12,color:"#889"}}>(デモ)</small></h1>
-      <nav><button onClick={()=>setTab("chat")} disabled={tab==="chat"}>対話ウィジェット</button>
-        <button onClick={()=>setTab("fb")} disabled={tab==="fb"}>広告フィードバック</button></nav>
-      {tab==="chat"?(<div className="card"><h2>対話マッチング(不動産)</h2>
-        <label>エリア <select><option>新宿</option><option>渋谷</option></select></label>
-        <label>間取り <select><option>1K</option><option>1LDK</option></select></label>
-        <label>こだわり <input defaultValue="駅近"/></label>
-        <button className="primary" onClick={()=>setRes(RESULTS)}>候補を探す</button>
-        <h3>候補(実在物件のみ)</h3>
-        <ul>{(res||[]).map(r=>(<li key={r.id}><b>{r.id}</b> (score {r.score}) — {r.reasons.join(" / ")}</li>))}</ul>
-      </div>):(<div className="card"><h2>広告フィードバック</h2>
-        <h3>頻出ニーズ(KW候補)</h3><table><tr><th>スロット</th><th>頻出値</th></tr>
-          {Object.entries(FREQ).map(([k,v])=>(<tr key={k}><td>{k}</td><td>{v.join("、")}</td></tr>))}</table>
-        <h3>候補ゼロ条件</h3><ul>{ZERO.map((z,i)=>(<li key={i}>{Object.entries(z).map(([k,v])=>k+"="+v).join("、")}</li>))}</ul>
-      </div>)}</div>);
-  }
-  ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
-</script><script>(function(){var src=document.getElementById("__jsx").textContent;var out=Babel.transform(src,{presets:[["react",{runtime:"classic"}]]}).code;(0,eval)(out);})();</script></body></html>
+// サンプル在庫(実運用ではDB接続)。実在物件のみを返す設計＝存在しない候補は生成しない
+const STOCK=[
+  {id:"RE-001", name:"新宿1K・駅徒歩5分", area:"新宿", layout:"1K",   rent:9.8,  walk:5,  age:8,  pets:false, autolock:true},
+  {id:"RE-002", name:"新宿1LDK・築浅",   area:"新宿", layout:"1LDK", rent:14.5, walk:9,  age:3,  pets:false, autolock:true},
+  {id:"RE-003", name:"渋谷1K・格安",     area:"渋谷", layout:"1K",   rent:8.9,  walk:12, age:22, pets:false, autolock:false},
+  {id:"RE-004", name:"新宿1K・ペット可", area:"新宿", layout:"1K",   rent:11.2, walk:8,  age:12, pets:true,  autolock:true},
+  {id:"RE-005", name:"渋谷1LDK・タワー", area:"渋谷", layout:"1LDK", rent:19.0, walk:4,  age:5,  pets:true,  autolock:true},
+  {id:"RE-006", name:"池袋1K・広め",     area:"池袋", layout:"1K",   rent:9.2,  walk:7,  age:15, pets:false, autolock:false},
+];
+const AREAS=["新宿","渋谷","池袋"], LAYOUTS=["1K","1LDK","2LDK"];
+// 重み(合計100)：条件ごとの重要度
+const W={area:30, layout:25, rent:20, walk:15, pets:5, autolock:5};
+const AXIS=["エリア","間取り","家賃","駅近","ペット可","設備"];
+
+function scoreOne(p,q){
+  const d=[];
+  d.push({k:"エリア",  s:p.area===q.area?W.area:0, max:W.area, ok:p.area===q.area, why:p.area===q.area?"希望エリア「"+q.area+"」に一致":"エリアが「"+p.area+"」で希望外"});
+  d.push({k:"間取り",  s:p.layout===q.layout?W.layout:0, max:W.layout, ok:p.layout===q.layout, why:p.layout===q.layout?"間取り「"+q.layout+"」に一致":"間取りが「"+p.layout+"」で希望外"});
+  const over=p.rent-q.rentMax;
+  const rentS=over<=0?W.rent:Math.max(0,W.rent-Math.round(over*6));
+  d.push({k:"家賃", s:rentS, max:W.rent, ok:over<=0, why:over<=0?"予算内（"+p.rent+"万円 ≤ "+q.rentMax+"万円）":"予算を"+over.toFixed(1)+"万円超過"});
+  const wover=p.walk-q.walkMax;
+  const walkS=wover<=0?W.walk:Math.max(0,W.walk-wover*2);
+  d.push({k:"駅近", s:walkS, max:W.walk, ok:wover<=0, why:wover<=0?"徒歩"+p.walk+"分（希望"+q.walkMax+"分以内）":"徒歩"+p.walk+"分で希望より"+wover+"分遠い"});
+  const petOk=!q.pets||p.pets;
+  d.push({k:"ペット可", s:petOk?W.pets:0, max:W.pets, ok:petOk, why:!q.pets?"条件指定なし":(p.pets?"ペット可":"ペット不可")});
+  const alOk=!q.autolock||p.autolock;
+  d.push({k:"設備", s:alOk?W.autolock:0, max:W.autolock, ok:alOk, why:!q.autolock?"条件指定なし":(p.autolock?"オートロックあり":"オートロックなし")});
+  const total=d.reduce((a,x)=>a+x.s,0);
+  return {...p, d, total};
+}
+const color=v=>v>=75?"#17a673":v>=55?"#f0a500":"#e0533b";
+function level(t){return t>=85?["ほぼ理想","#0f7a54"]:t>=70?["好条件","#17a673"]:t>=50?["妥協点あり","#f0a500"]:["条件不一致","#e0533b"];}
+
+function Radar({own}){
+  const cx=150,cy=145,R=100,N=own.length;
+  const ang=i=>-Math.PI/2+i*2*Math.PI/N;
+  const pt=(i,r)=>[cx+Math.cos(ang(i))*R*r, cy+Math.sin(ang(i))*R*r];
+  const poly=arr=>arr.map((v,i)=>pt(i,Math.max(0,Math.min(1,v))).join(",")).join(" ");
+  return (<svg width="100%" viewBox="0 0 300 300" style={{maxWidth:340}}>
+    {[0.33,0.66,1].map((rr,k)=>(<polygon key={k} points={own.map((_,i)=>pt(i,rr).join(",")).join(" ")} fill="none" stroke="#ece4dc"/>))}
+    {own.map((_,i)=>{const[x,y]=pt(i,1);return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#ece4dc"/>;})}
+    <polygon points={poly(own.map(()=>1))} fill="none" stroke="#c9b8a8" strokeWidth="1.5" strokeDasharray="4 3"/>
+    <polygon points={poly(own)} fill="#e07b3933" stroke="#e07b39" strokeWidth="2.5"/>
+    {AXIS.map((a,i)=>{const[x,y]=pt(i,1.18);return <text key={i} x={x} y={y} textAnchor="middle" fontSize="9.5" fill="#556">{a}</text>;})}
+  </svg>);
+}
+
+function App(){
+  const [q,setQ]=React.useState({area:"新宿",layout:"1K",rentMax:10,walkMax:8,pets:false,autolock:true});
+  const [ran,setRan]=React.useState(false);
+  const [sel,setSel]=React.useState(0);
+  const set=(k,v)=>{setQ(x=>({...x,[k]:v}));};
+  const results=STOCK.map(p=>scoreOne(p,q)).sort((a,b)=>b.total-a.total);
+  const hit=results.filter(r=>r.total>=50);
+  const best=results[Math.min(sel,results.length-1)];
+  const [lvl,lvlc]=best?level(best.total):["",""];
+  const own=best?best.d.map(x=>x.s/x.max):[];
+  const missing=best?best.d.filter(x=>!x.ok):[];
+  // 条件の緩和シミュレーション: 各条件を1つ緩めたら何件増えるか
+  const relax=[
+    {k:"エリアを問わない", q2:{...q,area:"__any"}},
+    {k:"家賃上限+2万円",   q2:{...q,rentMax:q.rentMax+2}},
+    {k:"駅徒歩+5分まで",   q2:{...q,walkMax:q.walkMax+5}},
+    {k:"間取りを問わない", q2:{...q,layout:"__any"}},
+  ].map(r=>{
+    const cnt=STOCK.map(p=>{
+      const qq={...r.q2};
+      const pp={...p};
+      if(qq.area==="__any")qq.area=pp.area;
+      if(qq.layout==="__any")qq.layout=pp.layout;
+      return scoreOne(pp,qq);
+    }).filter(x=>x.total>=70).length;
+    return {...r,cnt};
+  });
+  const base=results.filter(r=>r.total>=70).length;
+
+  return (<div className="wrap">
+    <h1>業種特化マッチングエンジン <span className="sub">（不動産）希望条件から実在在庫のみを実スコアリング</span></h1>
+
+    <div className="card">
+      <div className="real">✏️ <b>希望条件を入力</b>して「候補を探す」。在庫{STOCK.length}件それぞれと条件を照合し、重み付け（エリア30/間取り25/家賃20/駅近15/ペット5/設備5）でスコア化します。<b>存在しない物件は作りません。</b></div>
+      <div className="form">
+        <div><label>エリア</label><select value={q.area} onChange={e=>set("area",e.target.value)}>{AREAS.map(a=>(<option key={a}>{a}</option>))}</select></div>
+        <div><label>間取り</label><select value={q.layout} onChange={e=>set("layout",e.target.value)}>{LAYOUTS.map(a=>(<option key={a}>{a}</option>))}</select></div>
+        <div><label>家賃上限(万円)</label><input type="number" step="0.5" value={q.rentMax} onChange={e=>set("rentMax",Number(e.target.value)||0)}/></div>
+        <div><label>駅徒歩(分以内)</label><input type="number" value={q.walkMax} onChange={e=>set("walkMax",Number(e.target.value)||0)}/></div>
+        <div><label>ペット可が必要</label><select value={q.pets?"必要":"不問"} onChange={e=>set("pets",e.target.value==="必要")}><option>不問</option><option>必要</option></select></div>
+        <div><label>オートロック必要</label><select value={q.autolock?"必要":"不問"} onChange={e=>set("autolock",e.target.value==="必要")}><option>不問</option><option>必要</option></select></div>
+      </div>
+      <button className="primary" onClick={()=>{setRan(true);setSel(0);}}>候補を探す</button>
+      <button className="ghost" onClick={()=>{setQ({area:"新宿",layout:"3LDK",rentMax:8,walkMax:3,pets:true,autolock:true});setRan(true);setSel(0);}}>候補ゼロの例</button>
+    </div>
+
+    {ran && <React.Fragment>
+      {hit.length===0
+        ? <div className="card"><div className="zero"><b>該当なし</b>：この条件に合う在庫はありません（無理に似た物件を提示しません）。下の「条件を緩めた場合」を参考に条件を調整してください。</div></div>
+        : <div className="card">
+            <h2>候補一覧（適合スコア順・実在{hit.length}件）</h2>
+            <table><thead><tr><th className="l">物件</th><th>エリア</th><th>間取り</th><th>家賃</th><th>徒歩</th><th>適合スコア</th></tr></thead>
+              <tbody>{results.map((r,i)=>(<tr key={r.id} className={"clk"+(i===sel?" sel":"")} onClick={()=>setSel(i)}>
+                <td className="l"><b>{r.name}</b><br/><span className="sub">{r.id}</span></td>
+                <td>{r.area}</td><td>{r.layout}</td><td>{r.rent}万</td><td>{r.walk}分</td>
+                <td style={{color:color(r.total),fontWeight:"bold"}}>{r.total}</td></tr>))}
+              </tbody></table>
+            <p className="sub">※スコア50未満も参考表示していますが、条件不一致です。</p>
+          </div>}
+
+      {best && <div className="card" style={{display:"flex",gap:24,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{textAlign:"center"}}>
+          <h2>{best.name}</h2>
+          <div className="big" style={{color:color(best.total)}}>{best.total}<span style={{fontSize:16,color:"#8a8f9c"}}> /100</span></div>
+          <span className="lvl" style={{background:lvlc}}>{lvl}</span>
+          <div className="sub" style={{marginTop:6}}>{best.id} ／ {best.rent}万円・徒歩{best.walk}分・築{best.age}年</div>
+        </div>
+        <div><Radar own={own}/><div className="sub" style={{textAlign:"center"}}>■この物件の各条件充足度（外周=満点）</div></div>
+      </div>}
+
+      {best && <div className="card">
+        <h2>なぜこの物件か（条件ごとの根拠）</h2>
+        {best.d.map((x,i)=>(<div className="barrow" key={i}>
+          <span className="name">{x.k}</span>
+          <div className="track"><div className="fill" style={{width:(x.s/x.max*100)+"%",background:x.ok?"#17a673":"#e0533b"}}></div></div>
+          <span style={{width:52,textAlign:"right"}}>{x.s}/{x.max}</span>
+          <span className={x.ok?"reason":"miss"} style={{flex:1}}>{x.ok?"✓ ":"✗ "}{x.why}</span>
+        </div>))}
+      </div>}
+
+      <div className="card">
+        <h2>🤖 成約に近づけるプラン</h2>
+        <div className="ai">
+          現在の条件で<b>スコア70以上の候補は {base}件</b>です。
+          {best && missing.length>0 && <span> 最有力「{best.name}」で満たせていないのは <b>{missing.map(m=>m.k).join("・")}</b> です。</span>}
+          {base===0 && <span> このままでは決めにくい状態です。下記のどれか1つを緩めるのが近道です。</span>}
+        </div>
+        <div className="plan">
+          <div className="tierlabel">① まず1つ緩める（緩和で増える候補数を実計算）</div>
+          <ul>{relax.sort((a,b)=>b.cnt-a.cnt).map((r,k)=>(<li key={k}>
+            <b>{r.k}</b> → 候補 <b>{base}件 → {r.cnt}件</b>（{r.cnt>base?<span style={{color:"#0f7a54",fontWeight:"bold"}}>+{r.cnt-base}件</span>:<span style={{color:"#8a8f9c"}}>変化なし</span>}）
+          </li>))}</ul>
+        </div>
+        <div className="plan">
+          <div className="tierlabel">② さらに条件を詰める（広告・仕入れへの示唆）</div>
+          <ul>
+            <li><b>候補ゼロの条件は「仕入れ機会」</b>：需要はあるのに在庫がない＝獲得すべき物件像。</li>
+            <li><b>頻出条件は広告キーワード候補</b>：この検索では「{q.area}」「{q.layout}」「家賃{q.rentMax}万以下」が主要ニーズ。</li>
+            <li>緩和で最も候補が増える「{[...relax].sort((a,b)=>b.cnt-a.cnt)[0].k}」を接客トークの一次提案に。</li>
+          </ul>
+        </div>
+      </div>
+    </React.Fragment>}
+
+    <p className="note">※スコアは入力条件と在庫データの実照合による計算結果です。重み(30/25/20/15/5/5)は業種ヒューリスティックで、実運用では成約実績から学習して調整します。在庫はサンプル{STOCK.length}件（実運用は自社DB接続）。存在しない物件をAIが創作しない設計です。</p>
+  </div>);
+}
+</script>
+<script>(function(){var src=document.getElementById("__jsx").textContent;var out=Babel.transform(src,{presets:[["react",{runtime:"classic"}]]}).code;(0,eval)(out);ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));})();</script>
+</body></html>
