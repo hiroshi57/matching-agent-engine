@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>業種特化マッチングエンジン（実スコアリング）</title>
+  <title>賃貸物件マッチング（実スコアリング）</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
@@ -29,11 +29,13 @@
     .barrow{display:flex;align-items:center;gap:10px;margin:5px 0;font-size:13px}
     .barrow .name{width:110px;flex-shrink:0} .track{flex:1;background:#f1ece7;border-radius:6px;height:14px;overflow:hidden} .fill{height:14px;border-radius:6px}
     .note{color:#8a8f9c;font-size:12px}
+    .src{background:#f7f9fb;border:1px solid #e0e6ec;border-left:4px solid #8a97a6;border-radius:8px;padding:10px 12px;font-size:12.5px;color:#445;line-height:1.8;margin:8px 0}
+    .src b{color:#152238} .src div{margin:3px 0}
     @media(max-width:640px){body{padding:14px} .wrap{max-width:100%} h1{font-size:19px}
       table{display:block;overflow-x:auto;white-space:nowrap;font-size:12px} .barrow .name{width:80px}}
   </style>
 </head>
-<body><div style="max-width:880px;margin:0 auto 4px;background:#fff8e1;border:1px solid #f0d98a;border-radius:10px;padding:8px 14px;font:13px system-ui;color:#7a5b00">🔬 <b>実スコアリング版</b>：希望条件を入力すると、<b>在庫データに対して実際に条件照合・重み付けスコア計算</b>を行い、適合理由と不足点を提示します。在庫はサンプルデータ（実運用では自社DBを接続）。</div>
+<body><div style="max-width:880px;margin:0 auto 4px;background:#fff8e1;border:1px solid #f0d98a;border-radius:10px;padding:8px 14px;font:13px system-ui;color:#7a5b00">🔬 <b>実スコアリング版</b>：希望条件を入力すると、<b>在庫データに対して実際に条件照合・重み付けスコア計算</b>を行い、適合理由と不足点を提示します。<b>物件データはこのツール内の架空サンプル6件</b>（実在物件ではありません／実運用では自社DBに接続）。</div>
 <div id="root"></div>
 <script type="text/plain" id="__jsx">
 // サンプル在庫(実運用ではDB接続)。実在物件のみを返す設計＝存在しない候補は生成しない
@@ -114,10 +116,27 @@ function App(){
   const base=results.filter(r=>r.total>=70).length;
 
   return (<div className="wrap">
-    <h1>業種特化マッチングエンジン <span className="sub">（不動産）希望条件から実在在庫のみを実スコアリング</span></h1>
+    <h1>賃貸物件マッチング <span className="sub">希望条件から、在庫にある物件だけを点数化して提案</span></h1>
+
+    <div className="card" style={{background:"#fffdf8"}}>
+      <h2>このツールは何？（3行で）</h2>
+      <div style={{fontSize:13,lineHeight:1.8}}>
+        <div>▪️ <b>誰向け</b>：賃貸仲介の営業担当・不動産ポータル運営者。お客様の「ざっくりした希望」を条件に落として物件を絞る仕事をしている人。</div>
+        <div>▪️ <b>何が違う</b>：AIが物件を<b>創作しません</b>。在庫データに<b>実在する物件だけ</b>を、条件との一致度で点数化します。</div>
+        <div>▪️ <b>使いどころ</b>：①接客中に条件を入れて候補を出す ②候補ゼロの時に「どの条件を緩めれば何件増えるか」を即答する ③候補ゼロ条件を集めて<b>仕入れ・広告</b>に活かす。</div>
+      </div>
+      <div className="sub" style={{marginTop:8}}>※このエンジン自体は業種を差し替えられる設計（求人・中古車など）ですが、この画面は<b>賃貸不動産</b>の例です。</div>
+    </div>
 
     <div className="card">
       <div className="real">✏️ <b>希望条件を入力</b>して「候補を探す」。在庫{STOCK.length}件それぞれと条件を照合し、重み付け（エリア30/間取り25/家賃20/駅近15/ペット5/設備5）でスコア化します。<b>存在しない物件は作りません。</b></div>
+      <div className="src">
+        <b>📋 このデータの出所（正直に）</b>
+        <div>・下の物件{STOCK.length}件は<b>このツールに書かれた架空のサンプルデータ</b>です。実在の物件情報や外部サイトからの取得データではありません（下の「在庫データを見る」で全件確認できます）。</div>
+        <div>・<b>スコアは架空データに対する実計算</b>です（条件照合＋重み付けを実行しています。数値をあらかじめ書いてあるのではありません）。</div>
+        <div>・重み（エリア30/間取り25/家賃20/駅近15/ペット5/設備5）は<b>当社が設定した仮の重要度</b>です。公的調査に基づく値ではありません。実運用では自社の成約実績から算出します。</div>
+        <div>・<b>実運用時</b>：ここを自社の物件DB（またはREINS/自社CMS等）に接続すると、実在庫に対して同じ計算が動きます。</div>
+      </div>
       <div className="form">
         <div><label>エリア</label><select value={q.area} onChange={e=>set("area",e.target.value)}>{AREAS.map(a=>(<option key={a}>{a}</option>))}</select></div>
         <div><label>間取り</label><select value={q.layout} onChange={e=>set("layout",e.target.value)}>{LAYOUTS.map(a=>(<option key={a}>{a}</option>))}</select></div>
@@ -187,6 +206,17 @@ function App(){
         </div>
       </div>
     </React.Fragment>}
+
+    <div className="card">
+      <h2>参照している在庫データ（全{STOCK.length}件）</h2>
+      <p className="sub">検索は<b>この一覧だけ</b>を対象にしています。ここに無い物件は絶対に出てきません（AIが創作しない設計）。</p>
+      <table><thead><tr><th className="l">ID</th><th className="l">物件名</th><th>エリア</th><th>間取り</th><th>家賃</th><th>徒歩</th><th>築年</th><th>ペット</th><th>オートロック</th></tr></thead>
+        <tbody>{STOCK.map(p=>(<tr key={p.id}>
+          <td className="l">{p.id}</td><td className="l">{p.name}</td><td>{p.area}</td><td>{p.layout}</td>
+          <td>{p.rent}万</td><td>{p.walk}分</td><td>{p.age}年</td><td>{p.pets?"可":"不可"}</td><td>{p.autolock?"有":"無"}</td></tr>))}
+        </tbody></table>
+      <div className="src" style={{marginTop:8}}>この6件は<b>デモ用に作成した架空データ</b>です。実在物件・外部サイトのデータではありません。実運用では自社物件DBに差し替えます。</div>
+    </div>
 
     <p className="note">※スコアは入力条件と在庫データの実照合による計算結果です。重み(30/25/20/15/5/5)は業種ヒューリスティックで、実運用では成約実績から学習して調整します。在庫はサンプル{STOCK.length}件（実運用は自社DB接続）。存在しない物件をAIが創作しない設計です。</p>
   </div>);
